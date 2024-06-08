@@ -15,29 +15,35 @@ class HandleDealPayment implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private const PASS_TO_BUYER_DELAY = 180;
+
     public function __construct(private readonly Deal $deal) {}
 
-    /**
-     * Execute the job.
-     */
     public function handle(CodeGeneratorServiceInterface $codeGenerator): void
     {
         if (!$this->deal->pay_ok)
         {
-            $this->deal->deal_status_id = DealStatus::where("status_name", "CLOSED_PAYMENT_ERROR")
+            $this->deal->deal_status_id = DealStatus::where("status_name", '=', "CLOSED_PAYMENT_ERROR")
                 ->get()
                 ->first()
                 ->deal_status_id;
             $this->deal->save();
 
             $bet = $this->deal->bet()->get()->first();
+            $buyer = $bet->buyer()->first();
+            $buyer_rating = $buyer->buyerStatus()->first();
             $product = $bet->product()->get()->first();
             $product->is_sold = false;
             $product->save();
 
-            //rating decrease
+            if ($buyer_rating->rating > 0)
+            {
+                $buyer_rating->rating--;
+                $buyer_rating->save();
+            }
+
             EmailPaymentErrorJob::dispatch($bet);
-            EmailProductAgainNotSoldJob::dispatch($bet)->delay(1);
+            EmailProductAgainNotSoldJob::dispatch($bet)->delay(60);
             
             return;
         }
@@ -45,6 +51,6 @@ class HandleDealPayment implements ShouldQueue
         $this->deal->product_received_confirm_code = $codeGenerator->generate();
         $this->deal->save();
         
-        HandleDealPassToBuyer::dispatch($this->deal); //add delay
+        HandleDealPassToBuyer::dispatch($this->deal)->delay(self::PASS_TO_BUYER_DELAY);
     }
 }
