@@ -39,7 +39,7 @@ export default function ProductCard({product, linkToDisplayPage, ableToDelete = 
                 </span>
             </div>
             <div className="px-6 py-4 mb-auto bg-gray-50">
-                <div className="font-medium text-lg inline-block hover:text-indigo-600 transition duration-500 ease-in-out inline-block mb-2">
+                <div className="font-medium text-lg  hover:text-indigo-600 transition duration-500 ease-in-out inline-block mb-2">
                     {product.name}
                 </div>
                 <p className="text-gray-500 text-sm bg-gray-50">

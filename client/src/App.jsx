@@ -9,6 +9,7 @@ import ProductDetails from "./components/Product/ProductDetails";
 import {useEffect} from "react";
 import ProductDelete from "./components/Product/ProductDelete";
 import ChatsIndexPage from "./pages/ChatsIndexPage";
+import DealDetails from "./components/Profile/Deals/DealDetails";
 
 function App() {
     useEffect(() => {

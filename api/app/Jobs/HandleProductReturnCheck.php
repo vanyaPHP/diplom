@@ -24,12 +24,9 @@ class HandleProductReturnCheck implements ShouldQueue
     {
         if ($this->deal->has_errors_on_return)
         {
-             /**
-             * @var BuyerStatus $buyer_rating
-             */
             $buyer_rating = $this->deal->bet()->first()
                 ->buyer()->first()
-                ->buyerStatus()->first();
+                ->buyerStatus()->get()->first();
 
             if ($buyer_rating->rating > 0)
             {

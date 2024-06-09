@@ -34,15 +34,17 @@ class HandleDealPassToBuyer implements ShouldQueue
             $seller = $this->deal->bet()->first()
                 ->product()->first()
                 ->owner()->first();
-            /**
-             * @var SellerStatus $seller_rating
-            */    
-            $seller_rating = $seller->sellerStatus()->first();
+            
+            $seller_rating = $seller->sellerStatus()->get()->first();
             if ($seller_rating->rating > 0)
             {
                 $seller_rating->rating--;
                 $seller_rating->save();
             }    
+
+            $product = $this->deal->bet()->first()->product()->get()->first();
+            $product->is_sold = false;
+            $product->save();
 
             DealClosedWithError::dispatch($this->deal->bet()->first(), 'NOT PASSED');
             EmailProductAgainNotSoldJob::dispatch($this->deal->bet()->get()->first());

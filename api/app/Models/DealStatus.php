@@ -16,6 +16,8 @@ class DealStatus extends Model
 
     public $timestamps = false;
 
+    protected $primaryKey = 'deal_status_id';
+
     protected $table = 'Deal_status';
 
     public function closedDeals(): HasMany

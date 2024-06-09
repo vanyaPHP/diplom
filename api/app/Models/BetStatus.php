@@ -16,6 +16,8 @@ class BetStatus extends Model
 
     public $timestamps = false;
 
+    protected $primaryKey = 'bet_status_id';
+
     protected $table = 'Bet_status';
 
     public function bets(): HasMany

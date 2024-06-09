@@ -25,7 +25,10 @@ export default function ProfileSellingBets() {
             axios.get(`/bets/list-product-bets/${product_id}?page=${page}`)
                 .then(res => {
                     setPagesCount(res.data.pagesCount);
-                    setBets(res.data.betsData.bets);
+                    if (res.data.betsData.length != 0)
+                    {
+                        setBets(res.data.betsData.bets);
+                    }
                 });
         }
     }, [params]);

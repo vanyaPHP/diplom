@@ -26,12 +26,9 @@ class HandleProductReturn implements ShouldQueue
     {
         if ($this->deal->product_returned_datetime == null)
         {
-            /**
-             * @var BuyerStatus $buyer_rating
-             */
             $buyer_rating = $this->deal->bet()->first()
                 ->buyer()->first()
-                ->buyerStatus()->first();
+                ->buyerStatus()->get()->first();
 
             if ($buyer_rating->rating > 0)
             {

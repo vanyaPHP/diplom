@@ -1,4 +1,24 @@
+import axios from "axios";
+
 export default function ProfileSellingBet({bet}) {
+    const accept = () => {
+        axios.post('/bets/manage-bet/accept', {
+            bet_id: bet.bet_id
+        })
+        .then(res => {
+            window.location.reload();
+        })
+    };
+
+    const reject = () => {
+        axios.post('/bets/manage-bet/reject', {
+            bet_id: bet.bet_id
+        })
+        .then(res => {
+            window.location.reload();
+        })
+    };
+    
     return (
         <div className="max-w-xs mx-auto bg-white shadow-lg rounded-lg border border-gray-400 hover:border-2 hover:border-blue-500 overflow-hidden m-4">
             <div className="px-4 py-2">
@@ -12,12 +32,12 @@ export default function ProfileSellingBet({bet}) {
             </div>
             {bet.status == "сделана" && (
                 <div className="px-4 py-2 flex justify-between">
-                    <button onClick={() => console.log('accept')}
+                    <button onClick={accept}
                         className="px-4 py-2 bg-green-500 text-white font-semibold rounded-xl hover:shadow-xl"
                     >
                         Принять
                     </button>
-                    <button onClick={() => console.log('decline')}
+                    <button onClick={reject}
                         className="px-4 py-2 bg-red-500 text-white font-semibold rounded-xl hover:shadow-xl"
                     >
                         Отклонить

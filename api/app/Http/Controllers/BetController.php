@@ -11,6 +11,7 @@ use App\Models\BetStatus;
 use App\Models\Product;
 use App\Services\Paginator\PaginatorServiceInterface;
 use DateTime;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BetController extends Controller
@@ -18,7 +19,7 @@ class BetController extends Controller
     public function store(Request $request)
     {
         $data = $request->all();
-        $data["made_datetime"] = new \DateTime();
+        $data["made_datetime"] = new DateTime();
         $data["bet_status_id"] = BetStatus::where('status_name', "MADE")->get()->first()->bet_status_id;
         $data["accepted_datetime"] = null;
         $data["bet_won"] = null;
@@ -124,15 +125,18 @@ class BetController extends Controller
         $rejectedStatusId = BetStatus::where('status_name' , 'REJECTED')->get()->first()->bet_status_id;
         if ($action == "accept")
         {
-            $bet = Bet::find(request()->all('bet_id'));
-            $otherBetsOnProduct = Bet::where('product_id', $bet->product_id)->get();
+            $bet = Bet::find(request()->all('bet_id'))->first();
+            $otherBetsOnProduct = Bet::where('product_id', $bet->product_id)
+                ->andWhere('bet_id', '!=', $bet->bet_id)
+                ->get();
             $betsIdsToEmail = [];
-            $otherBetsOnProduct->each(function($otherBet) use ($rejectedStatusId, $betsIdsToEmail) {
+            foreach($otherBetsOnProduct as $otherBet)
+            {
                 $otherBet->bet_status_id = $rejectedStatusId;
                 $otherBet->save();
                 $betsIdsToEmail []= $otherBet->bet_id;
-            });
-            $bet->bet_status_id = BetStatus::where('status_name', "ACCEPTED")->get()->first()->bet_status_id;
+            }
+            $bet->bet_status_id = BetStatus::where('status_name', '=', "ACCEPTED")->first()->bet_status_id;
             $bet->accepted_datetime = new DateTime();
             $bet->save();
             HandleDealStartJob::dispatch($bet);
@@ -140,13 +144,13 @@ class BetController extends Controller
         }
         else if ($action == "reject")
         {
-            $bet = Bet::find(request()->all('bet_id'));
+            $bet = Bet::find(request()->input('bet_id'));
             $bet->bet_status_id = $rejectedStatusId;
             $bet->save();
             EmailRejectedBetsJob::dispatch([$bet->bet_id]);
         }
 
-        return response()->setStatusCode(200);
+        return new JsonResponse(null, 200);
     }
 
     private function getPaginatedBets(array $conditions, PaginatorServiceInterface $paginator)

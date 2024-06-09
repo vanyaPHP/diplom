@@ -37,7 +37,7 @@ class User extends Model
 
     public function sellerStatus(): HasOne
     {
-        return $this->hasOne(SellerStatus::class);
+        return $this->hasOne(SellerStatus::class, 'user_id', 'user_id');
     }
 
     public function chats(): HasMany

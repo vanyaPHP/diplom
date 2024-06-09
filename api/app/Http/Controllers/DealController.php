@@ -2,14 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\DealResource;
 use App\Models\Deal;
 use DateTime;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class DealController extends Controller
 {
+    public function listByUser()
+    {
+        $user_id = request()->query('user_id');
+        $deals = Deal::whereHas('bet', function (Builder $query) use ($user_id) {
+            $query->whereHas('product', function (Builder $query) use ($user_id) {
+                $query->where('owner_id', '=', $user_id);
+            })->orWhere('buyer_id', '=', $user_id);
+        })->get();
+
+        return new JsonResponse(DealResource::collection($deals), Response::HTTP_OK);   
+    }
+
+    public function singleDeal(int $deal_id)
+    {
+        $deal = Deal::find($deal_id);
+        
+        return new JsonResponse(new DealResource($deal), Response::HTTP_OK);
+    }
+
     public function makePayment(Request $request): JsonResponse
     {
         $deal = Deal::find($request->input('deal_id'));

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,6 +27,7 @@ class BetResource extends JsonResource
                 ? 'товар ещё на торгах'
                 : (($this->bet_won) ? 'да' : 'нет'),
             "bet_id" => $this->bet_id,
+            'product' => new ProductResource(Product::find($this->product_id)),
             "user" => new UserResource($this->buyer()->get()->first()),
             "price" => $this->price,
         ];

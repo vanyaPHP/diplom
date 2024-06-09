@@ -6,11 +6,15 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\CityResource;
 use App\Http\Resources\ProductResource;
 use App\Models\AddressDetail;
+use App\Models\Bet;
 use App\Models\Category;
 use App\Models\City;
+use App\Models\Deal;
 use App\Models\Product;
 use App\Services\Paginator\PaginatorServiceInterface;
 use App\Services\PhotoUploader\SimplePhotoUploader;
+use DealStatusEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -18,6 +22,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
+    private const DEAL_HAS_ERRORS_ON_SALE = 3;
+    private const DEAL_STARTED = 7;
+
     public function getProductFormInfo(): JsonResponse
     {
         $categories = CategoryResource::collection(Category::all());
@@ -120,6 +127,18 @@ class ProductController extends Controller
     {
         $data = json_decode($request->getContent(), true);
         $product_id = $data['product_id'];
+        $mainImageUrl = $photoUploader->handlePhotosUpdating($request, $product_id) ?? "";
+
+        if (!$this->checkIfProductIsAccessible(
+            Product::where('product_id', '=', $product_id)
+                ->get()->first()
+        ))
+        {
+            return new JsonResponse(
+                ['error' => 'Сделка по товару еще не закончена или по товару есть активные ставки'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
 
         AddressDetail::where('address_details_id', $data['address_details_id'])
             ->update([
@@ -133,7 +152,7 @@ class ProductController extends Controller
                 'product_name' => $data['product_name'],
                 'product_description' => $data['product_description'],
                 'immediate_buy_price' => $data['immediate_buy_price'],
-                'main_image_url' => $photoUploader->handlePhotosUpdating($request, $product_id) ?? ""
+                'main_image_url' => $mainImageUrl
             ]);
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -141,9 +160,46 @@ class ProductController extends Controller
 
     public function delete(int $product_id): JsonResponse
     {
-        Product::where('product_id', $product_id)->delete();
+        $product = Product::where('product_id', $product_id)->get()->first();
+        if (!$this->checkIfProductIsAccessible($product))
+        {
+            return new JsonResponse(
+                ['error' => 'Сделка по товару еще не закончена или по товару есть активные ставки'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+        
+        $product->delete();
         File::deleteDirectory(storage_path('app/public') . '/' . $product_id);
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    private function checkIfProductIsAccessible(Product $product): bool
+    {
+        $deals = Deal::whereHas('bet', function(Builder $query) use ($product) {
+            $query->where('product_id', '=', $product->product_id);
+        })->get();
+
+        if ($deals->count() == 0)
+        {
+            $bets = Bet::where('product_id', '=', $product->product_id)->get();
+            if ($bets->count() == 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        $lastDeal = $deals[0];
+        if ($lastDeal->deal_status_id == DealStatusEnum::CLOSED_PRODUCT_HAS_ERRORS->value 
+            || $lastDeal->deal_status_id == DealStatusEnum::STARTED->value
+        )
+        {
+            return false;
+        }
+
+        return true;
     }
 }

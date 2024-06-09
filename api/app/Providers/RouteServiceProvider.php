@@ -42,7 +42,10 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/product_pages.php'));
 
             Route::prefix('api/bets')
-                ->group(base_path('routes/bets_pages.php'));     
+                ->group(base_path('routes/bets_pages.php'));
+                
+            Route::prefix('api/deals')
+                ->group(base_path('routes/deals_pages.php'));                
         });
     }
 }

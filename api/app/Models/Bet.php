@@ -23,6 +23,8 @@ class Bet extends Model
 
     public $timestamps = false;
 
+    protected $primaryKey = 'bet_id';
+
     protected $table = 'Bet';
 
     public function status(): BelongsTo
@@ -42,6 +44,6 @@ class Bet extends Model
 
     public function deal(): HasOne
     {
-        return $this->hasOne(Deal::class);
+        return $this->hasOne(Deal::class, 'bet_id', 'bet_id');
     }
 }

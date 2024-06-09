@@ -19,7 +19,8 @@ class DealClosedWithError implements ShouldQueue
         'NOT PASSED' => 'Товар не передан покупателю',
         'HAS ERRORS' => 'Товар не соответствует описаниию при продаже',
         'NO RETURN'  => 'Товар не передан обратно продавцу',
-        'HAS ERRORS RETURN' => 'Товар не соответствует изначальному состоянию при продаже'
+        'HAS ERRORS RETURN' => 'Товар не соответствует изначальному состоянию при продаже',
+        'RETURNED SUCCESFULLY' => 'Товар успешно возвращен продавцу'
     ];
 
     public function __construct(private readonly Bet $bet, private readonly string $errorMsg)

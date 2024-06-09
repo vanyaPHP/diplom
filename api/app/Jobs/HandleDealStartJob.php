@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Psr\Log\LoggerInterface;
 
 class HandleDealStartJob implements ShouldQueue
 {
@@ -20,7 +21,7 @@ class HandleDealStartJob implements ShouldQueue
 
     public function __construct(private Bet $bet) {}
 
-    public function handle(): void
+    public function handle(LoggerInterface $logger): void
     {
         if (BetStatus::find($this->bet->bet_status_id)->status_name == "REJECTED")
         {
@@ -29,7 +30,7 @@ class HandleDealStartJob implements ShouldQueue
         
         $this->bet->bet_won = true;
         $this->bet->save();
-
+        
         $deal = Deal::create([
             'bet_id' => $this->bet->bet_id,
             'payment_datetime_start' => new \DateTime(),

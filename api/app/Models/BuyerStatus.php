@@ -11,6 +11,7 @@ class BuyerStatus extends Model
     use HasFactory;
 
     protected $fillable = [
+        'buyer_status_id',
         'rating',
         'user_id',
         'last_change_datetime',
@@ -19,10 +20,12 @@ class BuyerStatus extends Model
 
     public $timestamps = false;
 
+    protected $primaryKey = 'buyer_status_id';
+
     protected $table = 'Buyer_status';
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 }

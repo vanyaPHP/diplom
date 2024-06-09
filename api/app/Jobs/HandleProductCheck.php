@@ -6,12 +6,13 @@ use App\Models\Deal;
 use App\Models\SellerStatus;
 use App\Models\BuyerStatus;
 use App\Models\DealStatus;
-use App\Services\CodeGenerator\CodeGeneratorServiceInterface;
+use App\Services\CodeGenerator\CodeGeneratorService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Psr\Log\LoggerInterface;
 
 class HandleProductCheck implements ShouldQueue
 {
@@ -24,22 +25,17 @@ class HandleProductCheck implements ShouldQueue
         
     }
 
-    public function handle(CodeGeneratorServiceInterface $codeGeneratorService): void
+    public function handle(LoggerInterface $logger): void
     {
+        $codeGeneratorService = new CodeGeneratorService();
         $seller = $this->deal->bet()->first()
             ->product()->first()
             ->owner()->first();
         $buyer = $this->deal->bet()->first()
             ->buyer()->first();
 
-        /**
-          * @var SellerStatus $seller_rating
-        */    
-        $seller_rating = $seller->sellerStatus()->first();
-        /**
-          * @var BuyerStatus $buyer_rating 
-         */
-        $buyer_rating = $buyer->buyerStatus()->first();
+        $seller_rating = $seller->sellerStatus()->get()->first();
+        $buyer_rating = $buyer->buyerStatus()->get()->first();
         
         if ($this->deal->has_errors_on_sale)
         {
@@ -78,6 +74,6 @@ class HandleProductCheck implements ShouldQueue
             ->first()
             ->deal_status_id;
         $this->deal->save();
-        DealClosedSuccefully::dispatch($this->deal->bet());    
+        DealClosedSuccefully::dispatch($this->deal->bet()->first());    
     }
 }

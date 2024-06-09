@@ -42,7 +42,7 @@ class Product extends Model
 
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'owner_id', 'user_id');
     }
 
     public function bets(): HasMany

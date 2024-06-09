@@ -21,6 +21,8 @@ class CreditCard extends Model
 
     public $timestamps = false;
 
+    protected $primaryKey = 'credit_card_id';
+
     protected $table = 'Credit_card';
 
     public function archivedTransactions(): HasMany

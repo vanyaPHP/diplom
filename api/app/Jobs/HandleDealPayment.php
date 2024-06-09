@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Deal;
 use App\Models\DealStatus;
+use App\Services\CodeGenerator\CodeGeneratorService;
 use App\Services\CodeGenerator\CodeGeneratorServiceInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,10 +18,11 @@ class HandleDealPayment implements ShouldQueue
 
     private const PASS_TO_BUYER_DELAY = 180;
 
-    public function __construct(private readonly Deal $deal) {}
+    public function __construct(private Deal $deal) {}
 
-    public function handle(CodeGeneratorServiceInterface $codeGenerator): void
+    public function handle(): void
     {
+        $codeGenerator = new CodeGeneratorService();
         if (!$this->deal->pay_ok)
         {
             $this->deal->deal_status_id = DealStatus::where("status_name", '=', "CLOSED_PAYMENT_ERROR")
@@ -31,7 +33,7 @@ class HandleDealPayment implements ShouldQueue
 
             $bet = $this->deal->bet()->get()->first();
             $buyer = $bet->buyer()->first();
-            $buyer_rating = $buyer->buyerStatus()->first();
+            $buyer_rating = $buyer->buyerStatus()->get()->first();
             $product = $bet->product()->get()->first();
             $product->is_sold = false;
             $product->save();
