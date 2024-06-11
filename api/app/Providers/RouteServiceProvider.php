@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 
@@ -24,11 +25,11 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        RateLimiter::for('api', function (Request $request) {
+        /*RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
-        });
+        });*/
 
-        $this->routes(function () {
+        $this->routes(function () {            
             Route::prefix('api/auth')
                 ->group(base_path('routes/authorization.php'));
 
@@ -45,7 +46,14 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/bets_pages.php'));
                 
             Route::prefix('api/deals')
-                ->group(base_path('routes/deals_pages.php'));                
+                ->group(base_path('routes/deals_pages.php'));
+                
+            Route::prefix('api/chats')
+                ->group(base_path('routes/chat_pages.php'));    
         });
+
+        Broadcast::routes();
+
+        require base_path('routes/channels.php');
     }
 }

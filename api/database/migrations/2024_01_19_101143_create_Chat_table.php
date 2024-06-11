@@ -15,8 +15,10 @@ return new class extends Migration
     {
         Schema::create('Chat', function (Blueprint $table) {
             $table->bigInteger('chat_id', true);
-            $table->bigInteger('first_user_id')->index('seller_id_idx');
-            $table->bigInteger('second_user_id')->index('buyer_id_idx');
+            $table->bigInteger('first_user_id')->unsigned();
+            $table->bigInteger('second_user_id')->unsigned();
+            $table->foreignId('first_user_id')->references('user_id')->on('User');
+            $table->foreignId('second_user_id')->references('user_id')->on('User');
         });
     }
 
