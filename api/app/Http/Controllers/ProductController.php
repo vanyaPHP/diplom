@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\CityResource;
+use App\Http\Resources\CreditCardResource;
 use App\Http\Resources\ProductResource;
 use App\Models\AddressDetail;
 use App\Models\Bet;
 use App\Models\Category;
 use App\Models\City;
+use App\Models\CreditCard;
 use App\Models\Deal;
 use App\Models\Product;
 use App\Services\Paginator\PaginatorServiceInterface;
@@ -22,15 +24,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
-    private const DEAL_HAS_ERRORS_ON_SALE = 3;
-    private const DEAL_STARTED = 7;
-
     public function getProductFormInfo(): JsonResponse
     {
         $categories = CategoryResource::collection(Category::all());
         $cities = CityResource::collection(City::all());
+        $creditCards = CreditCardResource::collection(
+            CreditCard::where(
+                'owner_id', 
+                '=',
+                request()->query('user_id'))->get()
+        );
 
-        return response()->json(['categories' => $categories, 'cities' => $cities]);
+        return response()->json(['categories' => $categories, 'cities' => $cities, 'credit_cards' => $creditCards]);
     }
 
     public function saveProductPhotos(Request $request, SimplePhotoUploader $photoUploader): JsonResponse
@@ -59,6 +64,7 @@ class ProductController extends Controller
             'owner_id' => $data['owner_id'],
             'category_id' => $data['category_id'],
             'immediate_buy_price' => $data['immediate_buy_price'],
+            'seller_credit_card_id' => $data['seller_credit_card_id'],
             'address_details_id' => $address->address_details_id,
             'main_image_url' => ""
         ]);
@@ -117,7 +123,10 @@ class ProductController extends Controller
     {
         $categories = CategoryResource::collection(Category::all());
         $cities = CityResource::collection(City::all());
-        $product = new ProductResource(Product::find($product_id));
+        $product = Product::find($product_id);
+        $product->product_reviews++;
+        $product->save();
+        $product = new ProductResource($product);
 
         return response()->json(['product' => $product,
             'cities' => $cities, 'categories' => $categories]);

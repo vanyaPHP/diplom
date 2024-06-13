@@ -25,7 +25,7 @@ class AddressDetail extends Model
 
     public function city(): BelongsTo
     {
-        return $this->belongsTo(City::class);
+        return $this->belongsTo(City::class, 'city_id', 'city_id');
     }
 
     public function product(): HasOne

@@ -21,6 +21,7 @@ class Product extends Model
         'address_details_id',
         'immediate_buy_price',
         'is_sold',
+        'seller_credit_card_id',
         'main_image_url'
     ];
 
@@ -32,7 +33,7 @@ class Product extends Model
 
     public function address(): BelongsTo
     {
-        return $this->belongsTo(AddressDetail::class);
+        return $this->belongsTo(AddressDetail::class, 'address_details_id', 'address_details_id');
     }
 
     public function category(): BelongsTo

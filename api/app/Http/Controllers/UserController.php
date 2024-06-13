@@ -9,6 +9,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Admin;
 use App\Models\BuyerStatus;
 use App\Models\CreditCard;
+use App\Models\ReportChat;
 use App\Models\SellerStatus;
 use App\Models\User;
 use App\Services\Hash\HashServiceInterface;
@@ -68,6 +69,11 @@ class UserController extends Controller
             'rating' => 50,
             'last_change_datetime' => $dateTime,
             'last_change_diff' => 0
+        ]);
+
+        ReportChat::create([
+            'user_id' => $user->user_id,
+            'admin_id' => Admin::first()->admin_id
         ]);
 
         return (new UserResource($user))

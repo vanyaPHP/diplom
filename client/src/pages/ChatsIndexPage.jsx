@@ -7,6 +7,7 @@ import { io } from "socket.io-client";
 import {css} from "@emotion/react";
 import ClockLoader from "react-spinners/ClockLoader";
 import axios from "axios";
+import { useSearchParams } from "react-router-dom";
 
 const socket = io('http://localhost:8003');
 
@@ -15,6 +16,7 @@ export default function ChatsIndexPage() {
     const [chats, setChats] = useState(null);
     const [selectedChat, setSelectedChat] = useState(null);
     const [messages, setMessages] = useState(null);
+    const [queryParams] = useSearchParams();
     const [isNewMessageLoading, setIsNewMessageLoading] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const override = css`
@@ -27,7 +29,7 @@ export default function ChatsIndexPage() {
         if (!user) {
             getUser();
         } else {
-            fetchChats();
+            fetchChats(queryParams.get('chat_id'));
             if (selectedChat) {
                 fetchMessages(selectedChat.chat_id);
             }
@@ -43,6 +45,9 @@ export default function ChatsIndexPage() {
     const handleChatEvent = (data) => {
         const { action, chat } = data;
         if (action === 'create') {
+          if (!chats) {
+              setChats([chat]);
+          }
           setChats(prevChats => [...prevChats, chat]);
         }
     };
@@ -54,9 +59,12 @@ export default function ChatsIndexPage() {
         }
     };
     
-    const fetchChats = () => {
+    const fetchChats = (chatIdToSelect = null) => {
         axios.get(`http://localhost:8003/api/chats?user_id=${user.data.id}`)
           .then(response => {
+            if (chatIdToSelect) {
+                setSelectedChat(response.data.filter((chat) => chat.chat_id == chatIdToSelect)[0]);
+            }
             setChats(response.data);
           })
           .catch(error => {

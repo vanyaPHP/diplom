@@ -38,6 +38,7 @@ export default function DealDetails() {
         })
         .catch(err => {
             alert(err);
+            window.location.reload();
         })
     };
 

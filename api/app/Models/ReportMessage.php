@@ -16,10 +16,12 @@ class ReportMessage extends Model
 
     public $timestamps = false;
 
+    protected $primaryKey = 'report_message_id';
+
     protected $table = 'Report_message';
 
     public function chat(): BelongsTo
     {
-        return $this->belongsTo(ReportChat::class);
+        return $this->belongsTo(ReportChat::class, 'report_chat_id', 'report_chat_id');
     }
 }

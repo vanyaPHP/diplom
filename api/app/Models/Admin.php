@@ -19,10 +19,12 @@ class Admin extends Model
 
     public $timestamps = false;
 
+    protected $primaryKey = 'admin_id';
+
     protected $table = 'Admin';
 
     public function chats(): HasMany
     {
-        return $this->hasMany(ReportChat::class);
+        return $this->hasMany(ReportChat::class, 'admin_id', 'admin_id');
     }
 }

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\DealResource;
+use App\Models\CreditCard;
 use App\Models\Deal;
+use App\Services\PayPal\PayPalService;
 use DateTime;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -31,14 +33,19 @@ class DealController extends Controller
         return new JsonResponse(new DealResource($deal), Response::HTTP_OK);
     }
 
-    public function makePayment(Request $request): JsonResponse
+    public function makePayment(Request $request, PayPalService $payPalService): JsonResponse
     {
         $deal = Deal::find($request->input('deal_id'));
         $deal->buyer_credit_card_id = $request->input('credit_card_id');
-        $deal->pay_ok = true;
+        $creditCard = CreditCard::find($deal->buyer_credit_card_id);
+        $buyer = $creditCard->owner()->first();
+        $deal->pay_ok = $payPalService->makePayment($creditCard, $buyer, $deal->bet()->first());
         $deal->save();
 
-        return new JsonResponse();
+        return new JsonResponse(
+            $deal->pay_ok ? [] : ['error' => 'Ошибка оплаты'], 
+            $deal->pay_ok ? 200 : 500
+        );
     }
 
     public function approveConfirmCode(Request $request): JsonResponse

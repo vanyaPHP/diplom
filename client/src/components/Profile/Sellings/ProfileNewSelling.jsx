@@ -7,29 +7,37 @@ import {Navigate} from "react-router-dom";
 
 export default function ProfileNewSelling() {
     const [name, setName] = useState('');
-    const {user} = useContext(UserContext);
+    const {user, getUser} = useContext(UserContext);
     const [description, setDescription] = useState('');
     const [startPrice, setStartPrice] = useState(20);
     const [categoryId, setCategoryId] = useState(0);
     const [cityId, setCityId] = useState(0);
+    const [creditCardId, setCreditCardId] = useState(0);
     const [street, setStreet] = useState('');
     const [building, setBuilding] = useState(3);
     const [immediateBuy, setImmediateBuy] = useState(40);
     const [photos, setPhotos] = useState([]);
     const [cities, setCities] = useState([]);
+    const [creditCards, setCreditCards] = useState([]);
     const [categories, setCategories] = useState([]);
     const [redirect, setRedirect] = useState('');
 
     useEffect(() => {
-        axios.get('/products/product-form-info')
+        if (!user) {
+            getUser();
+        } else {
+            axios.get(`/products/product-form-info?user_id=${user.data.id}`)
             .then(res => {
+                console.log(res.data);
                 setCategories(res.data.categories);
+                setCreditCards(res.data.credit_cards);
                 setCities(res.data.cities);
             })
             .catch(err => {
                 console.log(err);
             })
-    }, []);
+        }
+    }, [user]);
 
     function inputHeader(text) {
         return (
@@ -56,8 +64,8 @@ export default function ProfileNewSelling() {
         const data = {
             product_name: name, product_description: description, product_start_price: startPrice,
             immediate_buy_price: immediateBuy, category_id: categoryId, owner_id: user.data.id,
-            cityId: cityId, street: street, building: building, is_sold: false, product_reviews: 0,
-            photos: photos
+            cityId: cityId, seller_credit_card_id: creditCardId, street: street,
+            building: building, is_sold: false, product_reviews: 0, photos: photos
         };
 
         axios.post('/products/save-product', data)
@@ -115,6 +123,23 @@ export default function ProfileNewSelling() {
                        value={immediateBuy}
                        onChange={ev => setImmediateBuy(ev.target.value)}
                        placeholder="Установите цену мгновенной покупки"/> <span>BYN</span>
+
+                {preInput('Кредитная карта для перевода средств', 'Номер кредитной карты из сохраненных')}
+                <select
+                     className="w-4/5 border border-gray-600 my-1 py-2 px-3 rounded-2xl"
+                     onChange={ev => setCreditCardId(ev.target.value)}
+                >
+                    <option value={0} key={0}>Выберите кредитную карту</option>
+                    {creditCards && creditCards.length && creditCards.map(creditCard => (
+                        <option key={creditCard.id} value={creditCard.id}>
+                            {creditCard.card_number}  (
+                                {creditCard.card_expiration_date[0]}{creditCard.card_expiration_date[1]}
+                                /
+                                {creditCard.card_expiration_date[2]}{creditCard.card_expiration_date[3]}
+                            ) 
+                        </option>
+                    ))}
+                </select>                       
 
                 {preInput('Фото', 'Фото вашего товара')}
                 <PhotosUploader addedPhotos={photos} onChange={setPhotos}/>

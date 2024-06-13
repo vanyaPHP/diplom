@@ -68,6 +68,16 @@ export default function ProductDetails() {
         });
     }
 
+    function createChatWithSeller(seller_id) {
+        axios.post('http://localhost:8003/api/chats', {
+            first_user_id: user.data.id,
+            second_user_id: seller_id
+        })
+        .then(res => {
+            setRedirect(`/chats?chat_id=${res.data.chat_id}`);
+        });
+    }
+
     if (redirect) {
         return <Navigate to={redirect}/>
     }
@@ -136,6 +146,7 @@ export default function ProductDetails() {
                                         <div className="flex -mx-2 mb-4">
                                             <div className="w-1/2 px-2 mx-auto">
                                                 <button
+                                                    onClick={() => createChatWithSeller(product.owner.id)}
                                                     className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-2 px-4 rounded-full font-bold hover:bg-gray-50 dark:hover:bg-gray-600">
                                                     Написать продавцу
                                                 </button>
