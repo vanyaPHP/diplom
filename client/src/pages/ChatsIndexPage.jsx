@@ -14,7 +14,9 @@ const socket = io('http://localhost:8003');
 export default function ChatsIndexPage() {
     const {user, getUser} = useContext(UserContext);
     const [chats, setChats] = useState(null);
+    const [reportChats, setReportChats] = useState(null);
     const [selectedChat, setSelectedChat] = useState(null);
+    const [isSelectedChatReport, setIsSelectedChatReport] = useState(null);
     const [messages, setMessages] = useState(null);
     const [queryParams] = useSearchParams();
     const [isNewMessageLoading, setIsNewMessageLoading] = useState(false);
@@ -54,18 +56,24 @@ export default function ChatsIndexPage() {
     
     const handleMessageEvent = (data) => {
         const { action, message } = data;
-        if (action === 'create' && message.chat_id == selectedChat.chat_id) {
-          setMessages(prevMessages => [...prevMessages, message]);
+        if (action === 'create') {
+          if (isSelectedChatReport && message.report_chat_id == selectedChat.chat_id) {
+            setMessages(prevMessages => [...prevMessages, message]);
+          } else if (!isSelectedChatReport && message.chat_id == selectedChat.chat_id) {
+            setMessages(prevMessages => [...prevMessages, message]);
+          }
         }
     };
     
     const fetchChats = (chatIdToSelect = null) => {
-        axios.get(`http://localhost:8003/api/chats?user_id=${user.data.id}`)
+        axios.get(`http://localhost:8003/api/chats?user_id=${user.data.id}&is_admin=${user.data.is_admin}`)
           .then(response => {
+            let chats = response.data;
             if (chatIdToSelect) {
-                setSelectedChat(response.data.filter((chat) => chat.chat_id == chatIdToSelect)[0]);
+                setSelectedChat(chats[0].filter((chat) => chat.chat_id == chatIdToSelect)[0]);
             }
-            setChats(response.data);
+            setChats(chats[0]);
+            setReportChats(chats[1]);
           })
           .catch(error => {
             console.error('Error fetching chats:', error);
@@ -73,7 +81,7 @@ export default function ChatsIndexPage() {
     };
     
     const fetchMessages = (chatId) => {
-        axios.get(`http://localhost:8003/api/chats/${chatId}/messages`)
+        axios.get(`http://localhost:8003/api/chats/${chatId}/messages?is_admin_chat=${isSelectedChatReport}`)
           .then(response => {
             setMessages(response.data);
             socket.emit('join', chatId);
@@ -84,16 +92,18 @@ export default function ChatsIndexPage() {
     };
     
     
-    const sendMessage = (chatId) => {
+    const sendMessage = (chatId, isSelectedChatReport) => {
         if (newMessage.length > 0) {
             setIsNewMessageLoading(true);
             let date = new Date();
+            isSelectedChatReport = (isSelectedChatReport == true) ? true : false;
             let day = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
             let time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-            axios.post(`http://localhost:8003/api/chats/${chatId}/messages`, {
+            axios.post(`http://localhost:8003/api/chats/${chatId}/messages?is_admin_chat=${isSelectedChatReport}`, {
                 message_text: newMessage,
                 message_datetime: day + " " + time,
-                sender_id: user.data.id 
+                sender_id: user.data.id,
+                is_admin_sender: isSelectedChatReport ? (user.data.is_admin) : false
              })
              .then(() => {
                setNewMessage('');
@@ -105,6 +115,11 @@ export default function ChatsIndexPage() {
         }
     };
 
+    const chooseChat = (chat, isSelectedChatReport = false) => {
+      setIsSelectedChatReport(isSelectedChatReport);
+      setSelectedChat(chat);
+    }
+
     return (
       <>
           <Navbar/>
@@ -112,25 +127,40 @@ export default function ChatsIndexPage() {
                   <div className="w-1/4 bg-white border-r overflow-y-scroll">
                     <h1 className="text-xl font-bold py-4 px-6 border-b border-gray-200">Чаты</h1>
                     {
-                        chats 
+                        chats || reportChats
                         ?
-                        <ul>
-                        {chats.map(chat => (
-                          <li key={chat.id} className="px-6 py-4 cursor-pointer border-b border-gray-200 hover:bg-gray-50" onClick={() => setSelectedChat(chat)}>
-                            {
-                                chat.first_user.user_id == user.data.id
-                                ?
-                                    <>
-                                      {chat.second_user.first_name} {chat.second_user.last_name}
-                                    </>
-                                :
-                                    <>
-                                      {chat.first_user.first_name} {chat.first_user.last_name}
-                                    </>
-                            }
-                          </li>
-                        ))}
-                      </ul>
+                          <ul>
+                          {chats.map(chat => (
+                            <li key={chat.chat_id} className="px-6 py-4 cursor-pointer border-b border-gray-200 hover:bg-gray-50" onClick={() => chooseChat(chat)}>
+                              {
+                                  chat.first_user.user_id == user.data.id
+                                  ?
+                                      <>
+                                        {chat.second_user.first_name} {chat.second_user.last_name}
+                                      </>
+                                  :
+                                      <>
+                                        {chat.first_user.first_name} {chat.first_user.last_name}
+                                      </>
+                              }
+                            </li>
+                          ))}
+                          {reportChats.map(reportChat => (
+                            <li key={"report_" + reportChat.report_chat_id} className="px-6 py-4 cursor-pointer border-b border-gray-200 hover:bg-gray-50" onClick={() => chooseChat(reportChat, true)}>
+                              {
+                                  reportChat.user.user_id == user.data.id
+                                  ?
+                                      <>
+                                        {reportChat.admin.first_name} {report.admin.last_name}
+                                      </>
+                                  :
+                                      <>
+                                        {reportChat.user.first_name} {reportChat.user.last_name}
+                                      </>
+                              }
+                            </li>
+                          ))}
+                          </ul>
                         :
                           <div 
                             className="ring-loader mt-32" style={{minHeight: "10vh", display: "grid", placeContent: "center"}}>
@@ -152,53 +182,107 @@ export default function ChatsIndexPage() {
                               <div className="bg-white border-b border-gray-200 flex justify-between items-center p-4">
                                 <h2 className="text-lg font-bold">
                                   {
-                                      selectedChat.first_user.user_id == user.data.id
+                                      isSelectedChatReport 
                                       ?
-                                          <>
-                                            {selectedChat.second_user.first_name} {selectedChat.second_user.last_name}
-                                          </>
+                                        selectedChat.user.user_id == user.data.id
+                                        ?
+                                            <>
+                                              {selectedChat.user.first_name} {selectedChat.user.last_name}
+                                            </>
+                                        :
+                                            <>
+                                              {selectedChat.admin.first_name} {selectedChat.admin.last_name}
+                                            </>
                                       :
-                                          <>
-                                            {selectedChat.first_user.first_name} {selectedChat.first_user.last_name}
-                                          </>
+                                        selectedChat.first_user.user_id == user.data.id
+                                        ?
+                                            <>
+                                              {selectedChat.second_user.first_name} {selectedChat.second_user.last_name}
+                                            </>
+                                        :
+                                            <>
+                                              {selectedChat.first_user.first_name} {selectedChat.first_user.last_name}
+                                            </>
                                   }
                                 </h2>
                               </div>
                               <div className="flex-1 bg-white border rounded-md border-gray-200 p-4 overflow-y-scroll">
-                                {messages && messages.map((message) => (
-                                  <div key={message.message_id} 
-                                    className={`
-                                      mb-4 ${message.sender.user_id == user.data.id
-                                        ? 'text-right'
-                                        : 'text-left'}
-                                    `}>
-                                    <span 
-                                      className={`inline-block rounded-lg px-3
-                                        py-1 max-w-xs ${message.sender.user_id == user.data.id
-                                            ? 'text-black bg-gray-400'
-                                            : 'text-white bg-blue-700'}
-                                      `}
-                                    >
-                                      {message.message_text}
-                                      <span 
-                                        className={`block text-xs mt-2 
-                                          ${
-                                              message.sender.user_id == user.data.id
-                                              ?
-                                                'text-black text-right'
-                                              :
-                                                'text-white text-right'    
-                                          }
-                                        `}>
-                                        {new Date(Date.parse(message.message_datetime))
-                                          .toISOString()
-                                          .replace('T', ' ')
-                                          .substring(0, 16)
-                                        }
-                                      </span>
-                                    </span>
-                                  </div>
-                                ))}
+                                {isSelectedChatReport
+                                  ?
+                                    <>
+                                       {messages && messages.map((message) => (
+                                          <div key={message.report_message_id} 
+                                            className={`
+                                              mb-4 ${message.sender_id == user.data.id
+                                                ? 'text-right'
+                                                : 'text-left'}
+                                            `}>
+                                            <span 
+                                              className={`inline-block rounded-lg px-3
+                                                py-1 max-w-xs ${message.sender_id == user.data.id
+                                                    ? 'text-black bg-gray-400'
+                                                    : 'text-white bg-blue-700'}
+                                              `}
+                                            >
+                                              {message.report_message_text}
+                                              <span 
+                                                className={`block text-xs mt-2 
+                                                  ${
+                                                      message.sender_id == user.data.id
+                                                      ?
+                                                        'text-black text-right'
+                                                      :
+                                                        'text-white text-right'    
+                                                  }
+                                                `}>
+                                                {new Date(Date.parse(message.report_message_datetime))
+                                                  .toISOString()
+                                                  .replace('T', ' ')
+                                                  .substring(0, 16)
+                                                }
+                                              </span>
+                                            </span>
+                                          </div>
+                                       ))}
+                                    </>
+                                  :
+                                    <>
+                                         {messages && messages.map((message) => (
+                                          <div key={message.message_id} 
+                                            className={`
+                                              mb-4 ${message.sender.user_id == user.data.id
+                                                ? 'text-right'
+                                                : 'text-left'}
+                                            `}>
+                                            <span 
+                                              className={`inline-block rounded-lg px-3
+                                                py-1 max-w-xs ${message.sender.user_id == user.data.id
+                                                    ? 'text-black bg-gray-400'
+                                                    : 'text-white bg-blue-700'}
+                                              `}
+                                            >
+                                              {message.message_text}
+                                              <span 
+                                                className={`block text-xs mt-2 
+                                                  ${
+                                                      message.sender.user_id == user.data.id
+                                                      ?
+                                                        'text-black text-right'
+                                                      :
+                                                        'text-white text-right'    
+                                                  }
+                                                `}>
+                                                {new Date(Date.parse(message.message_datetime))
+                                                  .toISOString()
+                                                  .replace('T', ' ')
+                                                  .substring(0, 16)
+                                                }
+                                              </span>
+                                            </span>
+                                          </div>
+                                        ))}
+                                    </>
+                                }
                               </div>
                               <div className="flex items-center p-4 gap-4">
                                   <input
@@ -210,7 +294,7 @@ export default function ChatsIndexPage() {
                                   />
                                   <button 
                                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r"
-                                    onClick={() => sendMessage(selectedChat.chat_id)}
+                                    onClick={() => sendMessage(selectedChat.chat_id, isSelectedChatReport)}
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />

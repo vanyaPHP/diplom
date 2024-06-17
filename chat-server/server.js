@@ -88,10 +88,10 @@ app.post('/api/chats/:chatId/messages', (req, res) => {
   const is_admin_chat = req.query.is_admin_chat;
   let result = null;
   if (is_admin_chat) {
-      const { report_message_text, report_message_datetime, is_admin_sender } = req.body;
+      const { message_text, message_datetime, is_admin_sender } = req.body;
       result = SyncSQL.mysql(dbConfig, 
         'INSERT INTO Report_message (report_message_text, report_message_datetime, report_chat_id, is_admin_sender) VALUES (?, ?, ?, ?)', 
-        [report_message_text, report_message_datetime, chatId, is_admin_sender]);
+        [message_text, message_datetime, chatId, is_admin_sender]);
       if (result.error) {
         return res.status(500).json({ message: result.error });
       }
