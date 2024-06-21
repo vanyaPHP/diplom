@@ -18,7 +18,7 @@ class HandleProductCheck implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private const PRODUCT_RETURN_DELAY = 180;
+    private const PRODUCT_RETURN_DELAY = 20;
 
     public function __construct(private Deal $deal)
     {

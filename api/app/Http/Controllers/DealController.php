@@ -37,7 +37,7 @@ class DealController extends Controller
     {
         $deal = Deal::find($request->input('deal_id'));
         $deal->buyer_credit_card_id = $request->input('credit_card_id');
-        $creditCard = CreditCard::find($deal->buyer_credit_card_id);
+        $creditCard = CreditCard::find($deal->buyer_credit_card_id)->first();
         $buyer = $creditCard->owner()->first();
         $deal->pay_ok = $payPalService->makePayment($creditCard, $buyer, $deal->bet()->first());
         $deal->save();

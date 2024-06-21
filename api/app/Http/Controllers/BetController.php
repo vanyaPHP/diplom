@@ -126,15 +126,20 @@ class BetController extends Controller
         if ($action == "accept")
         {
             $bet = Bet::find(request()->all('bet_id'))->first();
-            $otherBetsOnProduct = Bet::where('product_id', $bet->product_id)
-                ->andWhere('bet_id', '!=', $bet->bet_id)
+            $otherBetsOnProduct = Bet::where('product_id', '=', $bet->product_id)
+                ->where(function($query) use ($bet) {
+                    $query->where('bet_id', '!=', $bet->bet_id);
+                })
                 ->get();
             $betsIdsToEmail = [];
             foreach($otherBetsOnProduct as $otherBet)
             {
-                $otherBet->bet_status_id = $rejectedStatusId;
-                $otherBet->save();
-                $betsIdsToEmail []= $otherBet->bet_id;
+                if ($otherBet->bet_id != $bet->bet_id && $otherBet->bet_status_id != $rejectedStatusId)
+                {
+                    $otherBet->bet_status_id = $rejectedStatusId;
+                    $otherBet->save();
+                    $betsIdsToEmail []= $otherBet->bet_id;
+                }
             }
             $bet->bet_status_id = BetStatus::where('status_name', '=', "ACCEPTED")->first()->bet_status_id;
             $bet->accepted_datetime = new DateTime();

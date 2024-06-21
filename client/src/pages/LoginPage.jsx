@@ -15,7 +15,8 @@ export default function LoginPage() {
             .then((response) => {
                 const d = new Date();
                 d.setTime(d.getTime() + (7 * 24 * 60 * 60 * 1000));
-                document.cookie = "user_id=" + response.data.id + "; expires=" + d.toUTCString() + ";path=/";
+                document.cookie = "user_id=" + response.data.userData.id + "; expires=" + d.toUTCString() + ";path=/";
+                document.cookie = "is_admin=" + response.data.is_admin + "; expires=" + d.toUTCString() + ";path=/";
                 setRedirect('/profile');
             })
             .catch((err) => {

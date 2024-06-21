@@ -37,6 +37,7 @@ export default function ProductDetails() {
                     setPhotoLinks(photos);
                 }
                 setCurrentPhoto(photos[0]);
+                console.log(res.data.product);
                 setProduct(res.data.product);
             })
     }, [params]);
@@ -184,7 +185,14 @@ export default function ProductDetails() {
                                     <span
                                         className="font-bold text-gray-700 dark:text-gray-300">Последняя ставка:</span>
                                         <div className="flex items-center mt-2 text-gray-50">
-                                            30 BYN
+                                            {product.last_bet 
+                                                ?
+                                                    <>
+                                                        {product.last_bet} BYN
+                                                    </>    
+                                                :
+                                                    "Одобренных ставок на товар еще нет"
+                                            }
                                         </div>
                                     </div>
                                     <div className="mb-4">

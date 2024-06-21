@@ -15,7 +15,7 @@ class HandleDealPassToBuyer implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private const PRODUCT_CHECK_DELAY = 60;
+    private const PRODUCT_CHECK_DELAY = 20;
 
     public function __construct(private Deal $deal) {}
 

@@ -35,7 +35,7 @@ class UserController extends Controller
         {
             if ($hashService->verify($request->input('password'), $user->password))
             {
-                return response(new UserResource($user), 200)
+                return response(['userData' => new UserResource($user), 'is_admin' => false], 200)
                     ->cookie('user_id', $user->user_id, 1440);
             }
         }
@@ -43,7 +43,7 @@ class UserController extends Controller
         {
             if ($hashService->verify($request->input('password'), $admin->password))
             {
-                return response(new AdminResource($admin), 200)
+                return response(['userData' => new AdminResource($admin), 'is_admin' => true], 200)
                     ->cookie('user_id', $admin->admin_id, 1440);
             }
         }
@@ -83,9 +83,18 @@ class UserController extends Controller
 
     public function profile(int $id): JsonResponse
     {
-        return (new UserResource(User::find($id)))
-            ->response()
-            ->setStatusCode(Response::HTTP_OK);
+        if (request()->query('is_admin') == 'true')
+        {
+            return (new AdminResource(Admin::find($id)))
+                ->response()
+                ->setStatusCode(Response::HTTP_OK);
+        }
+        else
+        {
+            return (new UserResource(User::find($id)))
+                ->response()
+                ->setStatusCode(Response::HTTP_OK);            
+        }
     }
 
     public function creditCardsList(Request $request): JsonResponse

@@ -29,7 +29,7 @@ class EmailProductAgainNotSoldJob implements ShouldQueue
                 Mail::to($bet->buyer()->get()->first()->email)->send(new ProductAgainNotSoldMail($bet));
             }
 
-            $bet->delete();
+            //$bet->delete();
         }
     }
 }

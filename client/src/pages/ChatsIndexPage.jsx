@@ -33,7 +33,12 @@ export default function ChatsIndexPage() {
         } else {
             fetchChats(queryParams.get('chat_id'));
             if (selectedChat) {
-                fetchMessages(selectedChat.chat_id);
+                if (isSelectedChatReport) {
+                  fetchMessages(selectedChat.report_chat_id);
+                } else {
+                  fetchMessages(selectedChat.chat_id);
+                }
+                
             }
             socket.on('chat', handleChatEvent);
             socket.on('message', handleMessageEvent);
@@ -66,7 +71,7 @@ export default function ChatsIndexPage() {
     };
     
     const fetchChats = (chatIdToSelect = null) => {
-        axios.get(`http://localhost:8003/api/chats?user_id=${user.data.id}&is_admin=${user.data.is_admin}`)
+        axios.get(`http://localhost:8003/api/chats?id=${user.data.id}&is_admin=${user.data.is_admin}`)
           .then(response => {
             let chats = response.data;
             if (chatIdToSelect) {
@@ -83,6 +88,7 @@ export default function ChatsIndexPage() {
     const fetchMessages = (chatId) => {
         axios.get(`http://localhost:8003/api/chats/${chatId}/messages?is_admin_chat=${isSelectedChatReport}`)
           .then(response => {
+            console.log(response.data);
             setMessages(response.data);
             socket.emit('join', chatId);
           })
@@ -116,6 +122,7 @@ export default function ChatsIndexPage() {
     };
 
     const chooseChat = (chat, isSelectedChatReport = false) => {
+      setMessages(null);
       setIsSelectedChatReport(isSelectedChatReport);
       setSelectedChat(chat);
     }
@@ -127,31 +134,39 @@ export default function ChatsIndexPage() {
                   <div className="w-1/4 bg-white border-r overflow-y-scroll">
                     <h1 className="text-xl font-bold py-4 px-6 border-b border-gray-200">Чаты</h1>
                     {
-                        chats || reportChats
+                        chats && reportChats
                         ?
                           <ul>
-                          {chats.map(chat => (
-                            <li key={chat.chat_id} className="px-6 py-4 cursor-pointer border-b border-gray-200 hover:bg-gray-50" onClick={() => chooseChat(chat)}>
-                              {
-                                  chat.first_user.user_id == user.data.id
-                                  ?
-                                      <>
-                                        {chat.second_user.first_name} {chat.second_user.last_name}
-                                      </>
-                                  :
-                                      <>
-                                        {chat.first_user.first_name} {chat.first_user.last_name}
-                                      </>
-                              }
-                            </li>
-                          ))}
-                          {reportChats.map(reportChat => (
+                          {chats.length 
+                            ?
+                              <>
+                                {chats.map(chat => (
+                                  <li key={chat.chat_id} className="px-6 py-4 cursor-pointer border-b border-gray-200 hover:bg-gray-50" onClick={() => chooseChat(chat, false)}>
+                                    {
+                                        chat.first_user.user_id == user.data.id
+                                        ?
+                                            <>
+                                              {chat.second_user.first_name} {chat.second_user.last_name}
+                                            </>
+                                        :
+                                            <>
+                                              {chat.first_user.first_name} {chat.first_user.last_name}
+                                            </>
+                                    }
+                                  </li>
+                                ))}
+                              </>
+                            :
+                              <>
+                              </>
+                          }  
+                          {reportChats.length && reportChats.map(reportChat => (
                             <li key={"report_" + reportChat.report_chat_id} className="px-6 py-4 cursor-pointer border-b border-gray-200 hover:bg-gray-50" onClick={() => chooseChat(reportChat, true)}>
                               {
                                   reportChat.user.user_id == user.data.id
                                   ?
                                       <>
-                                        {reportChat.admin.first_name} {report.admin.last_name}
+                                        {reportChat.admin.first_name} {reportChat.admin.last_name}
                                       </>
                                   :
                                       <>
@@ -187,11 +202,11 @@ export default function ChatsIndexPage() {
                                         selectedChat.user.user_id == user.data.id
                                         ?
                                             <>
-                                              {selectedChat.user.first_name} {selectedChat.user.last_name}
+                                              {selectedChat.admin.first_name} {selectedChat.admin.last_name}
                                             </>
                                         :
                                             <>
-                                              {selectedChat.admin.first_name} {selectedChat.admin.last_name}
+                                              {selectedChat.user.first_name} {selectedChat.user.last_name}
                                             </>
                                       :
                                         selectedChat.first_user.user_id == user.data.id
@@ -210,77 +225,93 @@ export default function ChatsIndexPage() {
                                 {isSelectedChatReport
                                   ?
                                     <>
-                                       {messages && messages.map((message) => (
-                                          <div key={message.report_message_id} 
-                                            className={`
-                                              mb-4 ${message.sender_id == user.data.id
-                                                ? 'text-right'
-                                                : 'text-left'}
-                                            `}>
-                                            <span 
-                                              className={`inline-block rounded-lg px-3
-                                                py-1 max-w-xs ${message.sender_id == user.data.id
-                                                    ? 'text-black bg-gray-400'
-                                                    : 'text-white bg-blue-700'}
-                                              `}
-                                            >
-                                              {message.report_message_text}
-                                              <span 
-                                                className={`block text-xs mt-2 
-                                                  ${
-                                                      message.sender_id == user.data.id
-                                                      ?
-                                                        'text-black text-right'
-                                                      :
-                                                        'text-white text-right'    
-                                                  }
-                                                `}>
-                                                {new Date(Date.parse(message.report_message_datetime))
-                                                  .toISOString()
-                                                  .replace('T', ' ')
-                                                  .substring(0, 16)
-                                                }
-                                              </span>
-                                            </span>
-                                          </div>
-                                       ))}
+                                       {messages.length
+                                        ?
+                                          <>
+                                            {messages.map((message) => (
+                                                <div key={message.report_message_id} 
+                                                  className={`
+                                                    mb-4 ${message.is_admin_sender == user.data.is_admin
+                                                      ? 'text-right'
+                                                      : 'text-left'}
+                                                  `}>
+                                                  <span 
+                                                    className={`inline-block rounded-lg px-3
+                                                      py-1 max-w-xs ${message.is_admin_sender == user.data.is_admin
+                                                          ? 'text-black bg-gray-400'
+                                                          : 'text-white bg-blue-700'}
+                                                    `}
+                                                  >
+                                                    {message.report_message_text}
+                                                    <span 
+                                                      className={`block text-xs mt-2 
+                                                        ${
+                                                            message.is_admin_sender == user.data.is_admin
+                                                            ?
+                                                              'text-black text-right'
+                                                            :
+                                                              'text-white text-right'    
+                                                        }
+                                                      `}>
+                                                      {new Date(Date.parse(message.report_message_datetime))
+                                                        .toISOString()
+                                                        .replace('T', ' ')
+                                                        .substring(0, 16)
+                                                      }
+                                                    </span>
+                                                  </span>
+                                                </div>
+                                            ))}
+                                          </>
+                                        :
+                                          <>
+                                          </>
+                                       }
                                     </>
                                   :
                                     <>
-                                         {messages && messages.map((message) => (
-                                          <div key={message.message_id} 
-                                            className={`
-                                              mb-4 ${message.sender.user_id == user.data.id
-                                                ? 'text-right'
-                                                : 'text-left'}
-                                            `}>
-                                            <span 
-                                              className={`inline-block rounded-lg px-3
-                                                py-1 max-w-xs ${message.sender.user_id == user.data.id
-                                                    ? 'text-black bg-gray-400'
-                                                    : 'text-white bg-blue-700'}
-                                              `}
-                                            >
-                                              {message.message_text}
-                                              <span 
-                                                className={`block text-xs mt-2 
-                                                  ${
-                                                      message.sender.user_id == user.data.id
-                                                      ?
-                                                        'text-black text-right'
-                                                      :
-                                                        'text-white text-right'    
-                                                  }
-                                                `}>
-                                                {new Date(Date.parse(message.message_datetime))
-                                                  .toISOString()
-                                                  .replace('T', ' ')
-                                                  .substring(0, 16)
-                                                }
-                                              </span>
-                                            </span>
-                                          </div>
-                                        ))}
+                                         {messages.length
+                                          ?
+                                            <>
+                                              {messages.map((message) => (
+                                                <div key={message.message_id} 
+                                                  className={`
+                                                    mb-4 ${message.sender.user_id == user.data.id
+                                                      ? 'text-right'
+                                                      : 'text-left'}
+                                                  `}>
+                                                  <span 
+                                                    className={`inline-block rounded-lg px-3
+                                                      py-1 max-w-xs ${message.sender.user_id == user.data.id
+                                                          ? 'text-black bg-gray-400'
+                                                          : 'text-white bg-blue-700'}
+                                                    `}
+                                                  >
+                                                    {message.message_text}
+                                                    <span 
+                                                      className={`block text-xs mt-2 
+                                                        ${
+                                                            message.sender.user_id == user.data.id
+                                                            ?
+                                                              'text-black text-right'
+                                                            :
+                                                              'text-white text-right'    
+                                                        }
+                                                      `}>
+                                                      {new Date(Date.parse(message.message_datetime))
+                                                        .toISOString()
+                                                        .replace('T', ' ')
+                                                        .substring(0, 16)
+                                                      }
+                                                    </span>
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </>
+                                          :
+                                            <>
+                                            </>  
+                                         }
                                     </>
                                 }
                               </div>
@@ -294,7 +325,9 @@ export default function ChatsIndexPage() {
                                   />
                                   <button 
                                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r"
-                                    onClick={() => sendMessage(selectedChat.chat_id, isSelectedChatReport)}
+                                    onClick={() => sendMessage(isSelectedChatReport 
+                                      ? selectedChat.report_chat_id
+                                      : selectedChat.chat_id, isSelectedChatReport)}
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />

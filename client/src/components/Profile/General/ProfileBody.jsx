@@ -68,29 +68,33 @@ export default function ProfileBody() {
                                    required/>
                         </div>
 
-                        <div className="mt-3">
-                            <label htmlFor="seller_rating"
-                                   className="block text-white  text-sm font-semibold mb-2">Рейтинг продавца</label>
-                            <input type="text"
-                                   id="seller_rating"
-                                   disabled={true}
-                                   name="seller_rating"
-                                   value={user.data.seller_rating.rating}
-                                   className="w-full disabled bg-gray-800 text-white border border-gray-700 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                                   required/>
-                        </div>
+                        {!user.data.is_admin && (
+                            <>
+                                <div className="mt-3">
+                                    <label htmlFor="seller_rating"
+                                        className="block text-white  text-sm font-semibold mb-2">Рейтинг продавца</label>
+                                    <input type="text"
+                                        id="seller_rating"
+                                        disabled={true}
+                                        name="seller_rating"
+                                        value={user.data.seller_rating.rating}
+                                        className="w-full disabled bg-gray-800 text-white border border-gray-700 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                                        required/>
+                                </div>
 
-                        <div className="mt-3">
-                            <label htmlFor="buyer_rating"
-                                   className="block text-white  text-sm font-semibold mb-2">Рейтинг покупателя</label>
-                            <input type="text"
-                                   id="buyer_rating"
-                                   disabled={true}
-                                   name="buyer_rating"
-                                   value={user.data.buyer_rating.rating}
-                                   className="w-full disabled bg-gray-800 text-white border border-gray-700 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                                   required/>
-                        </div>
+                                <div className="mt-3">
+                                    <label htmlFor="buyer_rating"
+                                        className="block text-white  text-sm font-semibold mb-2">Рейтинг покупателя</label>
+                                    <input type="text"
+                                        id="buyer_rating"
+                                        disabled={true}
+                                        name="buyer_rating"
+                                        value={user.data.buyer_rating.rating}
+                                        className="w-full disabled bg-gray-800 text-white border border-gray-700 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                                        required/>
+                                </div>
+                            </>
+                        )}
                     </form>
                 </div>
                 <Footer/>

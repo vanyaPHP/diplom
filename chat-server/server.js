@@ -43,9 +43,9 @@ io.on('connection', (socket) => {
 });
 
 app.get('/api/chats', (req, res) => {  
-    let is_admin = req.query.is_admin;
+    let is_admin = req.query.is_admin == "true" ? true : false;
     let id = req.query.id;
-    res.json(fetchChatsByUser(id, is_admin));
+    res.json(fetchChatsByUser(is_admin, id));
 });
 
 app.post('/api/chats', (req, res) => {
@@ -75,7 +75,7 @@ app.post('/api/chats', (req, res) => {
 
 app.get('/api/chats/:chatId/messages', (req, res) => {
     const { chatId } = req.params;
-    const is_admin_chat = req.query.is_admin_chat;
+    const is_admin_chat = req.query.is_admin_chat == "true" ? true : false;
     const result = fetchMessages(chatId, null, is_admin_chat);
     if (result.error) {
         return res.status(500).json({ message: result.error });
@@ -85,7 +85,7 @@ app.get('/api/chats/:chatId/messages', (req, res) => {
 
 app.post('/api/chats/:chatId/messages', (req, res) => {
   const { chatId } = req.params;
-  const is_admin_chat = req.query.is_admin_chat;
+  const is_admin_chat = req.query.is_admin_chat == "true" ? true : false;
   let result = null;
   if (is_admin_chat) {
       const { message_text, message_datetime, is_admin_sender } = req.body;
@@ -95,6 +95,7 @@ app.post('/api/chats/:chatId/messages', (req, res) => {
       if (result.error) {
         return res.status(500).json({ message: result.error });
       }
+      console.log(result);
   } else {
       const { message_text, message_datetime, sender_id } = req.body;
       result = SyncSQL.mysql(dbConfig, 
@@ -117,7 +118,7 @@ const fetchChatsByUser = (is_admin, id) => {
 
     if (is_admin) {
         const result = SyncSQL.mysql(dbConfig,
-            `SELECT * FROM Report_Chat WHERE admin_id = ${id}`);
+            `SELECT * FROM Report_chat WHERE admin_id = ${id}`);
         if (result.error) {
             return res.status(500).json({ message: result.error });
         }
@@ -126,9 +127,9 @@ const fetchChatsByUser = (is_admin, id) => {
         {
             let row = result.data.rows[i];
             row.admin = SyncSQL.mysql(dbConfig,
-                `SELECT * FROM Admin WHERE admin_id = ${row.admin_id}`);
+                `SELECT * FROM Admin WHERE admin_id = ${row.admin_id}`).data.rows[0];
             row.user = SyncSQL.mysql(dbConfig,
-                `SELECT * FROM User WHERE user_id = ${row.user_id}`);    
+                `SELECT * FROM User WHERE user_id = ${row.user_id}`).data.rows[0];    
     
             delete row.admin_id;
             delete row.user_id;
@@ -167,9 +168,9 @@ const fetchChatsByUser = (is_admin, id) => {
         {
             let row = reportResult.data.rows[i];
             row.admin = SyncSQL.mysql(dbConfig,
-                `SELECT * FROM Admin WHERE admin_id = ${row.admin_id}`);
+                `SELECT * FROM Admin WHERE admin_id = ${row.admin_id}`).data.rows[0];
             row.user = SyncSQL.mysql(dbConfig,
-                `SELECT * FROM User WHERE user_id = ${row.user_id}`);    
+                `SELECT * FROM User WHERE user_id = ${row.user_id}`).data.rows[0];    
 
             delete row.admin_id;
             delete row.user_id;
@@ -218,7 +219,7 @@ const fetchMessages = (chatId , messageId = null, is_admin_chat) => {
 
         if (messageId) {
             data = result.data.rows[0];
-            data.report_chat = Synq.mysql(dbConfig, 
+            data.report_chat = SyncSQL.mysql(dbConfig, 
                 `SELECT * FROM Report_chat WHERE report_chat_id = ${data.report_chat_id}`).data.rows[0];
             delete data.report_chat_id;
         } else {

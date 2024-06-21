@@ -23,6 +23,7 @@ export default function DealDetails() {
                 axios.get(`/user/credit-cards?user_id=${user.data.id}`)
                 .then(res => {
                     setCards(res.data.credit_cards);
+                    setCreditCard(res.data.credit_cards[0].id);
                 })
             })
         }
@@ -175,7 +176,7 @@ export default function DealDetails() {
                                 />
                            </div>
 
-                           {deal.product_returned_datetime != null && deal.has_errors_on_return == null && (
+                           {deal.product_returned_datetime != null && deal.has_errors_on_return == null && deal.deal_status.deal_status_id != 6 && (
                                 <button 
                                     className="bg-slate-800 mt-4 hover:bg-slate-900
                                         text-white font-bold
@@ -228,7 +229,7 @@ export default function DealDetails() {
                                 )}
                              </div>
 
-                             {deal.check_datetime_start != null && !deal.has_errors_on_sale && (
+                             {deal.check_datetime_start != null && !deal.has_errors_on_sale && deal.deal_status.deal_status_id != 6 && (
                                 <button 
                                     className="bg-slate-800 mt-4 hover:bg-slate-900
                                         text-white font-bold

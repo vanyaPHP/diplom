@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\AddressDetail;
+use App\Models\Bet;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
@@ -26,6 +27,17 @@ class ProductResource extends JsonResource
             $photos []= "http://localhost:8000/storage/" . $this->product_id . "/" . $name;
         }
 
+        $bets = Bet::where('product_id', '=', $this->product_id)->orderByDesc('made_at');
+        $last_bet = null;
+        foreach($bets as $bet)
+        {
+            if ($bet->bet_status_id == 2)
+            {
+                $last_bet = $bet->price;
+                break;
+            }
+        }
+
         return [
             'id' => $this->product_id,
             'name' => $this->product_name,
@@ -38,6 +50,7 @@ class ProductResource extends JsonResource
             'owner' => new UserResource(User::find($this->owner_id)),
             'photos' => $photos,
             'main_image_url' => $this->main_image_url,
+            'last_bet' => $last_bet,
             'address_details' => new AddressResource(AddressDetail::find($this->address_details_id)),
         ];
     }

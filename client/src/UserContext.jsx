@@ -11,22 +11,38 @@ export function UserContextProvider({children}) {
         let name = "user_id=";
         let decodedCookie = decodeURIComponent(document.cookie);
         let ca = decodedCookie.split(';');
-        let value = 0;
+        let id = 0;
         for(let i = 0; i < ca.length; i++) {
             let c = ca[i];
             while (c.charAt(0) === ' ') {
                 c = c.substring(1);
             }
             if (c.indexOf(name) === 0) {
-                value =  c.substring(name.length, c.length);
+                id =  c.substring(name.length, c.length);
             }
         }
 
-        if (value.length > 0) {
-            axios.get('/user/profile/' + value).then((response) => {
+        name = "is_admin=";
+        decodedCookie = decodeURIComponent(document.cookie);
+        ca = decodedCookie.split(';');
+        let isAdmin = 0;
+        for(let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) === 0) {
+                isAdmin =  c.substring(name.length, c.length);
+            }
+        }
+
+        if (id.length > 0) {
+            axios.get(`/user/profile/${id}?is_admin=${isAdmin}`).then((response) => {
                 setUser(response.data);
                 setIsLoading(false);
             })
+        } else {
+
         }
     }
 

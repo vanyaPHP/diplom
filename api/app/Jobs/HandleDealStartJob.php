@@ -17,7 +17,7 @@ class HandleDealStartJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private const PAYMENT_DELAY = 180;
+    private const PAYMENT_DELAY = 20;
 
     public function __construct(private Bet $bet) {}
 
